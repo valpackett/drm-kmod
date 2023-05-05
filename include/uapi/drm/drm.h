@@ -54,7 +54,9 @@ typedef unsigned int drm_handle_t;
 #endif
 #include <sys/ioccom.h>
 #include <sys/types.h>
-#ifdef __linux__
+#if defined(__FreeBSD__) && defined(_KERNEL)
+#include <drm/drm_os_freebsd.h>
+#else
 typedef int8_t   __s8;
 typedef uint8_t  __u8;
 typedef int16_t  __s16;
@@ -64,9 +66,9 @@ typedef uint32_t __u32;
 typedef int64_t  __s64;
 typedef uint64_t __u64;
 typedef size_t   __kernel_size_t;
+#define __user 
 #endif
 typedef unsigned long drm_handle_t;
-#include <drm/drm_os_freebsd.h>
 #endif
 
 #if defined(__cplusplus)
