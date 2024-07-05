@@ -3,7 +3,7 @@
 SYSDIR?=/usr/src/sys
 .include "${SYSDIR}/conf/kern.opts.mk"
 
-_VALID_KMODS=	dmabuf ttm drm dummygfx i915 amd radeon linuxkpi_video
+_VALID_KMODS=	dmabuf ttm drm dummygfx bsdfb i915 amd radeon linuxkpi_video
 
 SUPPORTED_ARCH=	amd64 \
 		i386 \
@@ -20,6 +20,7 @@ SUPPORTED_ARCH=	amd64 \
 DEFAULT_KMODS=	dmabuf		\
 		ttm		\
 		drm		\
+		bsdfb \
 		amd		\
 		radeon
 

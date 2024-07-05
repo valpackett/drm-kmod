@@ -492,7 +492,6 @@ int drm_gem_create_mmap_offset(struct drm_gem_object *obj)
 }
 EXPORT_SYMBOL(drm_gem_create_mmap_offset);
 
-#ifdef __linux__
 /*
  * Move pages to appropriate lru and release the pagevec, decrementing the
  * ref count of those pages.
@@ -531,7 +530,9 @@ static void drm_gem_check_release_pagevec(struct pagevec *pvec)
  */
 struct page **drm_gem_get_pages(struct drm_gem_object *obj)
 {
+#ifdef __linux__
 	struct address_space *mapping;
+#endif
 	struct page *p, **pages;
 	struct pagevec pvec;
 	int i, npages;
@@ -540,8 +541,10 @@ struct page **drm_gem_get_pages(struct drm_gem_object *obj)
 	if (WARN_ON(!obj->filp))
 		return ERR_PTR(-EINVAL);
 
+#ifdef __linux__
 	/* This is the shared memory object that backs the GEM resource */
 	mapping = obj->filp->f_mapping;
+#endif
 
 	/* We already BUG_ON() for non-page-aligned sizes in
 	 * drm_gem_object_init(), so we should never hit this unless
@@ -555,14 +558,21 @@ struct page **drm_gem_get_pages(struct drm_gem_object *obj)
 	if (pages == NULL)
 		return ERR_PTR(-ENOMEM);
 
+#ifdef __linux__
 	mapping_set_unevictable(mapping);
+#endif
 
 	for (i = 0; i < npages; i++) {
+#ifdef __linux__
 		p = shmem_read_mapping_page(mapping, i);
+#elif defined(__FreeBSD__)
+		p = shmem_read_mapping_page(obj->filp->f_shmem, i);
+#endif
 		if (IS_ERR(p))
 			goto fail;
 		pages[i] = p;
 
+#ifdef __linux__
 		/* Make sure shmem keeps __GFP_DMA32 allocated pages in the
 		 * correct region during swapin. Note that this requires
 		 * __GFP_DMA32 to be set in mapping_gfp_mask(inode->i_mapping)
@@ -570,12 +580,15 @@ struct page **drm_gem_get_pages(struct drm_gem_object *obj)
 		 */
 		BUG_ON(mapping_gfp_constraint(mapping, __GFP_DMA32) &&
 				(page_to_pfn(p) >= 0x00100000UL));
+#endif
 	}
 
 	return pages;
 
 fail:
+#ifdef __linux__
 	mapping_clear_unevictable(mapping);
+#endif
 	pagevec_init(&pvec);
 	while (i--) {
 		if (!pagevec_add(&pvec, pages[i]))
@@ -600,11 +613,15 @@ void drm_gem_put_pages(struct drm_gem_object *obj, struct page **pages,
 		bool dirty, bool accessed)
 {
 	int i, npages;
+#ifdef __linux__
 	struct address_space *mapping;
+#endif
 	struct pagevec pvec;
 
+#ifdef __linux__
 	mapping = file_inode(obj->filp)->i_mapping;
 	mapping_clear_unevictable(mapping);
+#endif
 
 	/* We already BUG_ON() for non-page-aligned sizes in
 	 * drm_gem_object_init(), so we should never hit this unless
@@ -635,7 +652,6 @@ void drm_gem_put_pages(struct drm_gem_object *obj, struct page **pages,
 	kvfree(pages);
 }
 EXPORT_SYMBOL(drm_gem_put_pages);
-#endif
 
 static int objects_lookup(struct drm_file *filp, u32 *handle, int count,
 			  struct drm_gem_object **objs)

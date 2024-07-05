@@ -3,6 +3,8 @@
 #include <drm/drm_gem.h>
 #include <drm/drm_fourcc.h>
 #include <drm/drm_framebuffer.h>
+#include <drm/drm_damage_helper.h>
+#include <drm/drm_gem_framebuffer_helper.h>
 #include <drm/drm_modeset_helper.h>
 
 void
@@ -64,4 +66,39 @@ err:
 	}
 	kfree(objs);
 	return ret;
+}
+
+struct drm_framebuffer *
+drm_gem_fb_create_with_funcs(struct drm_device *dev, struct drm_file *file,
+			     const struct drm_mode_fb_cmd2 *mode_cmd,
+			     const struct drm_framebuffer_funcs *funcs)
+{
+	struct drm_framebuffer *fb;
+	int ret;
+
+	fb = kzalloc(sizeof(*fb), GFP_KERNEL);
+	if (!fb)
+		return ERR_PTR(-ENOMEM);
+
+	ret = drm_gem_fb_init_with_funcs(dev, fb, file, mode_cmd, funcs);
+	if (ret) {
+		kfree(fb);
+		return ERR_PTR(ret);
+	}
+
+	return fb;
+}
+
+static const struct drm_framebuffer_funcs drm_gem_fb_funcs_dirtyfb = {
+	.destroy	= drm_gem_fb_destroy,
+	.create_handle	= drm_gem_fb_create_handle,
+	.dirty		= drm_atomic_helper_dirtyfb,
+};
+
+struct drm_framebuffer *
+drm_gem_fb_create_with_dirty(struct drm_device *dev, struct drm_file *file,
+			     const struct drm_mode_fb_cmd2 *mode_cmd)
+{
+	return drm_gem_fb_create_with_funcs(dev, file, mode_cmd,
+					    &drm_gem_fb_funcs_dirtyfb);
 }

@@ -174,10 +174,18 @@ drm_add_busid_modesetting(struct drm_device *dev, struct sysctl_ctx_list *ctx,
 	int domain, bus, slot, func;
 
 	bsddev = dev->dev->bsddev;
-	domain = pci_get_domain(bsddev);
-	bus    = pci_get_bus(bsddev);
-	slot   = pci_get_slot(bsddev);
-	func   = pci_get_function(bsddev);
+	if (dev_is_pci(dev->dev)) {
+		domain = pci_get_domain(bsddev);
+		bus    = pci_get_bus(bsddev);
+		slot   = pci_get_slot(bsddev);
+		func   = pci_get_function(bsddev);
+	} else {
+		/* Just have something to satisfy libdrm. */
+		domain = 0;
+		bus    = 0;
+		slot   = 0;
+		func   = 0;
+	}
 
 	snprintf(dev->busid_str, sizeof(dev->busid_str),
 	    "pci:%04x:%02x:%02x.%d", domain, bus, slot, func);

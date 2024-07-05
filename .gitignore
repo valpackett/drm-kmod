@@ -77,3 +77,8 @@ vmwgfx/i386
 vmwgfx/x86
 vmwgfx/machine
 vmwgfx/export_syms
+bsdfb/*.h
+bsdfb/i386
+bsdfb/x86
+bsdfb/machine
+bsdfb/export_syms
